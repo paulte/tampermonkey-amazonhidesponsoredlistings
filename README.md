@@ -1,3 +1,3 @@
 [![CI](https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/actions/workflows/test.yml/badge.svg)](https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/actions/workflows/test.yml)
 [![CodeQL](https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/actions/workflows/codeql.yml/badge.svg)](https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/actions/workflows/codeql.yml)
-[![Dependabot](https://img.shields.io/badge/dependencies-Dependabot-025E8C?logo=dependabot)](https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/network/updates)
+[![DependaBot](https://img.shields.io/badge/dependencies-Dependabot-025E8C?logo=dependabot)](https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/network/updates)
