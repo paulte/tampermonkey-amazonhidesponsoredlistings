@@ -46,3 +46,6 @@ jobs:
 
       - name: Check spelling
         run: git ls-files -z | xargs -0 codespell
+
+      - name: Lint GitHub Actions
+        uses: raven-actions/actionlint@v2
