@@ -12,11 +12,9 @@ const USERSCRIPT = fs.readFileSync(USERSCRIPT_PATH, 'utf8');
 
 const AMAZON_SEARCH_URL = 'https://www.amazon.co.uk/s?k=cordless+drill';
 
-const SPONSORED_MARKER = 'span[aria-label="Leave feedback on Sponsored ad"]';
-
 const SEARCH_RESULTS_CONTAINER = '.s-main-slot.s-result-list.s-search-results';
 
-test('userscript removes an initially present sponsored Amazon result', async ({ page }) => {
+test('userscript removes an initially present sponsored listitem', async ({ page }) => {
   await page.goto(AMAZON_SEARCH_URL, {
     waitUntil: 'domcontentloaded',
   });
@@ -32,48 +30,70 @@ test('userscript removes an initially present sponsored Amazon result', async ({
       throw new Error('Could not find Amazon search results');
     }
 
-    /*
-     * Create a synthetic sponsored result.
-     *
-     * Deliberately do NOT use:
-     * - search_result_XX
-     * - data-asin
-     * - product names
-     * - seller names
-     * - Amazon generated CSS classes
-     */
     const sponsored = document.createElement('div');
 
-    sponsored.className = 'test-sponsored-result';
-
-    const content = document.createElement('div');
-    content.textContent = 'Synthetic sponsored listing';
+    sponsored.className = 'test-sponsored-listitem';
+    sponsored.setAttribute('role', 'listitem');
 
     const marker = document.createElement('span');
 
-    marker.setAttribute('aria-label', 'Leave feedback on Sponsored ad');
-
-    marker.setAttribute('role', 'button');
+    marker.className = 'puis-sponsored-label-text';
     marker.textContent = 'Sponsored';
 
-    content.prepend(marker);
-    sponsored.appendChild(content);
-
+    sponsored.appendChild(marker);
     results.prepend(sponsored);
   }, SEARCH_RESULTS_CONTAINER);
 
-  await expect(page.locator('.test-sponsored-result')).toHaveCount(1);
+  await expect(page.locator('.test-sponsored-listitem')).toHaveCount(1);
 
-  await expect(page.locator(`.test-sponsored-result ${SPONSORED_MARKER}`)).toHaveCount(1);
+  await expect(page.locator('.test-sponsored-listitem .puis-sponsored-label-text')).toHaveCount(1);
 
   await page.addScriptTag({
     content: USERSCRIPT,
   });
 
-  await expect(page.locator('.test-sponsored-result')).toHaveCount(0);
+  await expect(page.locator('.test-sponsored-listitem')).toHaveCount(0);
 });
 
-test('userscript removes a dynamically inserted sponsored Amazon result', async ({ page }) => {
+test('userscript removes an initially present sponsored card container', async ({ page }) => {
+  await page.goto(AMAZON_SEARCH_URL, {
+    waitUntil: 'domcontentloaded',
+  });
+
+  await page.waitForSelector(SEARCH_RESULTS_CONTAINER, {
+    timeout: 15000,
+  });
+
+  await page.evaluate((resultsSelector) => {
+    const results = document.querySelector(resultsSelector);
+
+    if (!results) {
+      throw new Error('Could not find Amazon search results');
+    }
+
+    const sponsored = document.createElement('div');
+
+    sponsored.className = 'puis-card-container test-sponsored-card';
+
+    const marker = document.createElement('span');
+
+    marker.className = 'puis-sponsored-label-text';
+    marker.textContent = 'Sponsored';
+
+    sponsored.appendChild(marker);
+    results.prepend(sponsored);
+  }, SEARCH_RESULTS_CONTAINER);
+
+  await expect(page.locator('.test-sponsored-card')).toHaveCount(1);
+
+  await page.addScriptTag({
+    content: USERSCRIPT,
+  });
+
+  await expect(page.locator('.test-sponsored-card')).toHaveCount(0);
+});
+
+test('userscript removes a dynamically inserted sponsored result', async ({ page }) => {
   await page.goto(AMAZON_SEARCH_URL, {
     waitUntil: 'domcontentloaded',
   });
@@ -83,9 +103,7 @@ test('userscript removes a dynamically inserted sponsored Amazon result', async 
   });
 
   /*
-   * Load the userscript BEFORE adding the sponsored result.
-   *
-   * The MutationObserver must therefore detect the new content.
+   * Load the userscript first so its MutationObserver is active.
    */
   await page.addScriptTag({
     content: USERSCRIPT,
@@ -98,36 +116,30 @@ test('userscript removes a dynamically inserted sponsored Amazon result', async 
       throw new Error('Could not find Amazon search results');
     }
 
+    /*
+     * Model the newer Amazon sponsored card structure.
+     */
     const sponsored = document.createElement('div');
 
-    sponsored.className = 'test-dynamic-sponsored-result';
-
-    const content = document.createElement('div');
-
-    content.textContent = 'Synthetic dynamically loaded sponsored listing';
+    sponsored.className = 'puis-card-container test-dynamic-sponsored-result';
 
     const marker = document.createElement('span');
 
-    marker.setAttribute('aria-label', 'Leave feedback on Sponsored ad');
-
-    marker.setAttribute('role', 'button');
+    marker.className = 'puis-sponsored-label-text';
     marker.textContent = 'Sponsored';
 
-    content.appendChild(marker);
-    sponsored.appendChild(content);
+    sponsored.appendChild(marker);
 
     /*
-     * Insert AFTER the userscript and MutationObserver
+     * Insert after the userscript and MutationObserver
      * are active.
      */
     results.prepend(sponsored);
   }, SEARCH_RESULTS_CONTAINER);
 
   /*
-   * The MutationObserver should detect and remove it.
-   *
-   * We deliberately expect ZERO here because the observer
-   * may remove the element before Playwright can observe it.
+   * The MutationObserver should detect the insertion and
+   * remove the sponsored card.
    */
   await expect(page.locator('.test-dynamic-sponsored-result')).toHaveCount(0, {
     timeout: 5000,
