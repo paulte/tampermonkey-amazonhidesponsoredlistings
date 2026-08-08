@@ -6,75 +6,130 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-test('userscript removes a sponsored Amazon listing', async ({ page }) => {
-  await page.goto('https://www.amazon.co.uk/s?k=cordless+drill', { waitUntil: 'domcontentloaded' });
+const USERSCRIPT_PATH = path.join(__dirname, '../src/hide-sponsored-listings.user.js');
 
-  // Find a real search result from Amazon's LIVE DOM.
-  const resultSelector = 'div[role="listitem"][data-asin]';
+const USERSCRIPT = fs.readFileSync(USERSCRIPT_PATH, 'utf8');
 
-  await page.waitForSelector(resultSelector, {
+const AMAZON_SEARCH_URL = 'https://www.amazon.co.uk/s?k=cordless+drill';
+
+const SPONSORED_MARKER = 'span[aria-label="Leave feedback on Sponsored ad"]';
+
+const SEARCH_RESULTS_CONTAINER = '.s-main-slot.s-result-list.s-search-results';
+
+test('userscript removes an initially present sponsored Amazon result', async ({ page }) => {
+  await page.goto(AMAZON_SEARCH_URL, {
+    waitUntil: 'domcontentloaded',
+  });
+
+  await page.waitForSelector(SEARCH_RESULTS_CONTAINER, {
     timeout: 15000,
   });
 
-  const resultCount = await page.locator(resultSelector).count();
+  await page.evaluate((resultsSelector) => {
+    const results = document.querySelector(resultsSelector);
 
-  console.log(`Amazon result items: ${resultCount}`);
-
-  expect(resultCount).toBeGreaterThan(0);
-
-  // Use an actual Amazon result as the basis of our controlled test.
-  await page.evaluate((selector) => {
-    const original = document.querySelector(selector);
-
-    if (!original) {
-      throw new Error('Could not find an Amazon search result');
+    if (!results) {
+      throw new Error('Could not find Amazon search results');
     }
 
-    const sponsored = original.cloneNode(true);
+    /*
+     * Create a synthetic sponsored result.
+     *
+     * Deliberately do NOT use:
+     * - search_result_XX
+     * - data-asin
+     * - product names
+     * - seller names
+     * - Amazon generated CSS classes
+     */
+    const sponsored = document.createElement('div');
 
-    sponsored.setAttribute('data-asin', 'TEST-SPONSORED-ASIN');
+    sponsored.className = 'test-sponsored-result';
 
-    // Remove any existing sponsored markers from the clone.
-    sponsored.querySelectorAll('.puis-sponsored-label-text').forEach((element) => element.remove());
+    const content = document.createElement('div');
+    content.textContent = 'Synthetic sponsored listing';
 
-    // Add the sponsored marker that the userscript is designed
-    // to detect.
     const marker = document.createElement('span');
 
-    marker.className = 'puis-sponsored-label-text';
+    marker.setAttribute('aria-label', 'Leave feedback on Sponsored ad');
+
+    marker.setAttribute('role', 'button');
     marker.textContent = 'Sponsored';
 
-    sponsored.prepend(marker);
+    content.prepend(marker);
+    sponsored.appendChild(content);
 
-    original.parentElement.insertBefore(sponsored, original);
-  }, resultSelector);
+    results.prepend(sponsored);
+  }, SEARCH_RESULTS_CONTAINER);
 
-  // Confirm our controlled sponsored result exists.
-  await expect(page.locator('div[role="listitem"][data-asin="TEST-SPONSORED-ASIN"]')).toHaveCount(
-    1,
-  );
+  await expect(page.locator('.test-sponsored-result')).toHaveCount(1);
 
-  // Confirm the sponsored marker exists inside it.
-  await expect(
-    page.locator(
-      'div[role="listitem"][data-asin="TEST-SPONSORED-ASIN"] .puis-sponsored-label-text',
-    ),
-  ).toHaveCount(1);
-
-  // Load the userscript being tested.
-  const userscriptPath = path.join(__dirname, '../src/hide-sponsored-listings.user.js');
-
-  const userscript = fs.readFileSync(userscriptPath, 'utf8');
+  await expect(page.locator(`.test-sponsored-result ${SPONSORED_MARKER}`)).toHaveCount(1);
 
   await page.addScriptTag({
-    content: userscript,
+    content: USERSCRIPT,
   });
 
-  // The userscript uses a 300ms debounce.
-  await page.waitForTimeout(500);
+  await expect(page.locator('.test-sponsored-result')).toHaveCount(0);
+});
 
-  // The sponsored listing should have been removed.
-  await expect(page.locator('div[role="listitem"][data-asin="TEST-SPONSORED-ASIN"]')).toHaveCount(
-    0,
-  );
+test('userscript removes a dynamically inserted sponsored Amazon result', async ({ page }) => {
+  await page.goto(AMAZON_SEARCH_URL, {
+    waitUntil: 'domcontentloaded',
+  });
+
+  await page.waitForSelector(SEARCH_RESULTS_CONTAINER, {
+    timeout: 15000,
+  });
+
+  /*
+   * Load the userscript BEFORE adding the sponsored result.
+   *
+   * The MutationObserver must therefore detect the new content.
+   */
+  await page.addScriptTag({
+    content: USERSCRIPT,
+  });
+
+  await page.evaluate((resultsSelector) => {
+    const results = document.querySelector(resultsSelector);
+
+    if (!results) {
+      throw new Error('Could not find Amazon search results');
+    }
+
+    const sponsored = document.createElement('div');
+
+    sponsored.className = 'test-dynamic-sponsored-result';
+
+    const content = document.createElement('div');
+
+    content.textContent = 'Synthetic dynamically loaded sponsored listing';
+
+    const marker = document.createElement('span');
+
+    marker.setAttribute('aria-label', 'Leave feedback on Sponsored ad');
+
+    marker.setAttribute('role', 'button');
+    marker.textContent = 'Sponsored';
+
+    content.appendChild(marker);
+    sponsored.appendChild(content);
+
+    /*
+     * Insert AFTER the userscript and MutationObserver
+     * are active.
+     */
+    results.prepend(sponsored);
+  }, SEARCH_RESULTS_CONTAINER);
+
+  /*
+   * The MutationObserver should detect and remove it.
+   *
+   * We deliberately expect ZERO here because the observer
+   * may remove the element before Playwright can observe it.
+   */
+  await expect(page.locator('.test-dynamic-sponsored-result')).toHaveCount(0, {
+    timeout: 5000,
+  });
 });
