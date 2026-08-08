@@ -5,6 +5,7 @@ name: Test
   push:
     branches: [main]
   pull_request:
+  workflow_call:
 
 permissions:
   contents: read
@@ -25,30 +26,20 @@ jobs:
 
       - name: Install Node dependencies
         run: npm ci
+
       - name: Lint GitHub Actions
         uses: raven-actions/actionlint@v2
-
-      - name: Check formatting
-        run: npm run format:check
-
-      - name: Lint JavaScript
-        run: npm run lint
 
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
           python-version: "3.x"
 
-      - name: Install Markdown tools
-        run: pip install mdformat codespell
+      - name: Install pre-commit
+        run: pip install pre-commit
 
-      - name: Check Markdown formatting
-        run: |
-          find . -type f \( -name '*.md' -o -name '*.markdown' \) \
-            -not -path './.git/*' \
-            -not -path './node_modules/*' \
-            -print0 |
-            xargs -0 mdformat --check
+      - name: Run pre-commit
+        run: pre-commit run --all-files
 
-      - name: Check spelling
-        run: git ls-files -z | xargs -0 codespell
+      - name: Run tests
+        run: npm test
