@@ -7,7 +7,7 @@
     "lint": "eslint src/hide-sponsored-listings.user.js",
     "format": "prettier --write \"**/*.{js,json}\"",
     "format:check": "prettier --check \"**/*.{js,json}\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "playwright test"
   },
   "repository": {
     "type": "git",
@@ -23,6 +23,7 @@
   "homepage": "https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings#readme",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.1",
     "eslint": "^10.8.1",
     "prettier": "^3.6.2"
   }

@@ -22,7 +22,6 @@ jobs:
 
       - name: Install Node dependencies
         run: npm ci
-
       - name: Lint GitHub Actions
         uses: raven-actions/actionlint@v2
 
