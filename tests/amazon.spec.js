@@ -1,137 +1,155 @@
 import { test, expect } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-test('Amazon live search structure still exposes sponsored search listings', async ({
-  browser,
-}) => {
-  const context = await browser.newContext({
-    userAgent:
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ' +
-      'AppleWebKit/537.36 (KHTML, like Gecko) ' +
-      'Chrome/150.0.0.0 Safari/537.36',
-    viewport: {
-      width: 1440,
-      height: 1000,
-    },
-    locale: 'en-GB',
-    timezoneId: 'Europe/London',
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const USERSCRIPT_PATH = path.join(__dirname, '../src/hide-sponsored-listings.user.js');
+
+const USERSCRIPT = fs.readFileSync(USERSCRIPT_PATH, 'utf8');
+
+const AMAZON_SEARCH_URL = 'https://www.amazon.co.uk/s?k=cordless+drill';
+
+const SEARCH_RESULTS_CONTAINER = '.s-main-slot.s-result-list.s-search-results';
+
+/*
+ * Amazon sponsored markers currently observed in search results.
+ *
+ * These deliberately target Amazon's actual sponsored/ad markers
+ * rather than generic text such as "Sponsored", which can also
+ * appear in Amazon's feedback UI.
+ */
+const SPONSORED_MARKERS = [
+  '.puis-sponsored-label-text',
+  '.s-widget-sponsored-label-text',
+  '[aria-label="View Sponsored information or leave advertisement feedback"]',
+  '[aria-label="Leave feedback on sponsored ad"]',
+  '[aria-label="Leave feedback on Sponsored ad"]',
+].join(', ');
+
+/*
+ * Return the actual sponsored markers currently exposed by Amazon.
+ *
+ * We deliberately count the markers themselves here rather than
+ * attempting to identify their containing result/card. This makes
+ * the test independent of Amazon's changing result-container
+ * hierarchy.
+ */
+async function getSponsoredMarkers(page) {
+  return page.locator(SPONSORED_MARKERS).evaluateAll((markers) =>
+    markers.map((marker, index) => ({
+      index: index + 1,
+      tag: marker.tagName,
+      className: marker.className,
+      ariaLabel: marker.getAttribute('aria-label'),
+      text: marker.textContent?.trim().slice(0, 200),
+      resultAncestor: marker.closest('.s-result-item')?.className ?? null,
+      adHolder: marker.closest('.AdHolder')?.className ?? null,
+    })),
+  );
+}
+
+test('userscript removes all sponsored content from live Amazon search', async ({ page }) => {
+  await page.goto(AMAZON_SEARCH_URL, {
+    waitUntil: 'domcontentloaded',
   });
 
-  const page = await context.newPage();
+  await page.waitForSelector(SEARCH_RESULTS_CONTAINER, {
+    timeout: 15000,
+  });
 
-  const searchUrl = 'https://www.amazon.co.uk/s?k=cordless+drill';
+  /*
+   * Wait for Amazon to finish rendering its search/ad modules.
+   *
+   * We poll rather than relying on a single arbitrary delay because
+   * Amazon renders parts of the search page asynchronously.
+   */
+  const maxAttempts = 20;
 
-  const maxAttempts = 3;
+  let before = [];
 
-  let resultCount = 0;
-  let sponsoredCount = 0;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    before = await getSponsoredMarkers(page);
 
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    console.log(`Amazon search attempt ${attempt}/${maxAttempts}`);
+    console.log(
+      `Waiting for sponsored content: attempt ${attempt}/${maxAttempts}, found ${before.length}`,
+    );
 
-    await page.goto(searchUrl, {
-      waitUntil: 'domcontentloaded',
-      timeout: 30000,
-    });
-
-    // Amazon renders search results asynchronously.
-    await page.waitForTimeout(5000);
-
-    resultCount = await page.locator('[role="listitem"]').count();
-
-    console.log(`Amazon result items: ${resultCount}`);
-
-    sponsoredCount = await page.locator('.puis-sponsored-label-text').count();
-
-    console.log(`Sponsored labels: ${sponsoredCount}`);
-
-    console.log(`Amazon URL: ${page.url()}`);
-
-    console.log(`Amazon title: ${await page.title()}`);
-
-    if (resultCount === 0) {
-      console.log(
-        `Amazon body preview:\n${(await page.locator('body').innerText()).slice(0, 2000)}`,
-      );
-
-      await page.screenshot({
-        path: `test-results/amazon-attempt-${attempt}.png`,
-        fullPage: true,
-      });
-    }
-
-    if (resultCount > 0 && sponsoredCount > 0) {
+    if (before.length > 0) {
       break;
     }
 
-    if (attempt < maxAttempts) {
-      console.log('Amazon did not return a usable sponsored search page; retrying...');
-
-      await page.waitForTimeout(2000);
-    }
+    await page.waitForTimeout(1000);
   }
 
-  expect(
-    resultCount,
-    'Amazon returned no usable search results after all attempts.',
-  ).toBeGreaterThan(0);
+  console.log(`Sponsored markers before userscript: ${before.length}`);
 
-  expect(sponsoredCount, 'Amazon returned no sponsored labels after all attempts.').toBeGreaterThan(
-    0,
-  );
-
-  let sponsoredSearchResults = 0;
-  let nonResultSponsoredLabels = 0;
-
-  const sponsoredLabels = page.locator('.puis-sponsored-label-text');
-
-  for (let i = 0; i < sponsoredCount; i++) {
-    const label = sponsoredLabels.nth(i);
-
-    await expect(label).toBeVisible();
-
-    const resultItem = label.locator('xpath=ancestor::div[@role="listitem"][1]');
-
-    const resultItemCount = await resultItem.count();
-
-    if (resultItemCount === 0) {
-      nonResultSponsoredLabels++;
-
-      console.log(`Sponsored label ${i + 1} is outside a role=listitem result`);
-
-      continue;
-    }
-
-    sponsoredSearchResults++;
-
-    // Critical relationship used by the userscript:
-    //
-    // .puis-sponsored-label-text
-    //        ↓
-    // div[role="listitem"]
-    //
-    // If Amazon changes this relationship, this test should fail.
-
-    const title = resultItem.locator('h2');
-
-    await expect(title, `Sponsored search result ${i + 1} has no h2 title`).toHaveCount(1);
-
-    const titleText = (await title.innerText()).trim();
-
-    expect(titleText.length, `Sponsored search result ${i + 1} has an empty title`).toBeGreaterThan(
-      0,
-    );
-
-    console.log(`Sponsored search listing ${sponsoredSearchResults}: ${titleText}`);
+  if (before.length > 0) {
+    console.log('Sponsored markers detected:', before);
   }
 
-  console.log(`Sponsored search listings: ${sponsoredSearchResults}`);
-  console.log(`Sponsored labels outside search results: ${nonResultSponsoredLabels}`);
-
+  /*
+   * This is deliberately an assertion.
+   *
+   * This is a live local-Amazon test and we expect Amazon to
+   * expose sponsored content before the userscript is installed.
+   */
   expect(
-    sponsoredSearchResults,
-    'Amazon returned sponsored labels but none were inside div[role="listitem"]. ' +
-      'The DOM structure required by the userscript may have changed.',
+    before.length,
+    'Expected Amazon to expose sponsored content before the userscript',
   ).toBeGreaterThan(0);
 
-  await context.close();
+  /*
+   * Install the userscript AFTER Amazon has rendered the
+   * sponsored content.
+   */
+  await page.addScriptTag({
+    content: USERSCRIPT,
+  });
+
+  /*
+   * Allow the userscript's initial scan and MutationObserver
+   * processing to complete.
+   */
+  await page.waitForTimeout(1000);
+
+  const afterInitial = await getSponsoredMarkers(page);
+
+  console.log(`Sponsored markers after userscript: ${afterInitial.length}`);
+
+  if (afterInitial.length > 0) {
+    console.log('Sponsored markers remaining:', afterInitial);
+  }
+
+  expect(afterInitial.length, 'Sponsored content remains after userscript was installed').toBe(0);
+
+  /*
+   * Scroll through the page to deliberately trigger Amazon's
+   * lazy-loading of additional content.
+   */
+  for (let i = 0; i < 8; i += 1) {
+    await page.evaluate(() => {
+      window.scrollBy(0, window.innerHeight);
+    });
+
+    await page.waitForTimeout(750);
+  }
+
+  /*
+   * Allow any newly inserted content to be processed by the
+   * userscript's MutationObserver.
+   */
+  await page.waitForTimeout(1000);
+
+  const afterScroll = await getSponsoredMarkers(page);
+
+  console.log(`Sponsored markers after scrolling: ${afterScroll.length}`);
+
+  if (afterScroll.length > 0) {
+    console.log('Sponsored markers remaining after scrolling:', afterScroll);
+  }
+
+  expect(afterScroll.length, 'Sponsored content appeared or survived after lazy-loading').toBe(0);
 });
