@@ -102,9 +102,6 @@ test('userscript removes a dynamically inserted sponsored result', async ({ page
     timeout: 15000,
   });
 
-  /*
-   * Load the userscript first so its MutationObserver is active.
-   */
   await page.addScriptTag({
     content: USERSCRIPT,
   });
@@ -116,9 +113,6 @@ test('userscript removes a dynamically inserted sponsored result', async ({ page
       throw new Error('Could not find Amazon search results');
     }
 
-    /*
-     * Model the newer Amazon sponsored card structure.
-     */
     const sponsored = document.createElement('div');
 
     sponsored.className = 'puis-card-container test-dynamic-sponsored-result';
@@ -130,18 +124,65 @@ test('userscript removes a dynamically inserted sponsored result', async ({ page
 
     sponsored.appendChild(marker);
 
-    /*
-     * Insert after the userscript and MutationObserver
-     * are active.
-     */
     results.prepend(sponsored);
   }, SEARCH_RESULTS_CONTAINER);
 
-  /*
-   * The MutationObserver should detect the insertion and
-   * remove the sponsored card.
-   */
   await expect(page.locator('.test-dynamic-sponsored-result')).toHaveCount(0, {
     timeout: 5000,
   });
+});
+
+test('userscript removes a sponsored multi-content AdHolder', async ({ page }) => {
+  await page.goto(AMAZON_SEARCH_URL, {
+    waitUntil: 'domcontentloaded',
+  });
+
+  await page.waitForSelector(SEARCH_RESULTS_CONTAINER, {
+    timeout: 15000,
+  });
+
+  await page.evaluate((resultsSelector) => {
+    const results = document.querySelector(resultsSelector);
+
+    if (!results) {
+      throw new Error('Could not find Amazon search results');
+    }
+
+    /*
+     * Model the multi-content sponsored blocks previously
+     * observed on Amazon.
+     *
+     * Deliberately do NOT use:
+     * - search_result_XX
+     * - data-asin
+     * - product names
+     * - advertiser names
+     * - generated Amazon IDs
+     */
+    const sponsored = document.createElement('div');
+
+    sponsored.className =
+      's-result-item s-widget s-widget-spacing-large AdHolder ' +
+      's-flex-full-width test-sponsored-multi-content';
+
+    const content = document.createElement('div');
+
+    const marker = document.createElement('span');
+
+    marker.className = 'puis-sponsored-label-text';
+    marker.textContent = 'Sponsored';
+
+    content.appendChild(marker);
+    sponsored.appendChild(content);
+
+    results.prepend(sponsored);
+  }, SEARCH_RESULTS_CONTAINER);
+
+  await expect(page.locator('.test-sponsored-multi-content')).toHaveCount(1);
+
+  await page.addScriptTag({
+    content: USERSCRIPT,
+  });
+
+  await expect(page.locator('.test-sponsored-multi-content')).toHaveCount(0);
 });
