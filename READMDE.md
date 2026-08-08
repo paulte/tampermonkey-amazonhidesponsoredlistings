@@ -1,0 +1,1 @@
+[![CI](https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/actions/workflows/test.yml/badge.svg)](https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/actions/workflows/test.yml)

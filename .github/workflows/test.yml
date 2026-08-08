@@ -1,0 +1,43 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Check JavaScript formatting
+        run: npm run format:check
+
+      - name: Lint JavaScript
+        run: npm run lint
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Install Markdown tools
+        run: pip install mdformat codespell
+
+      - name: Check Markdown formatting
+        run: mdformat --check README.md
+
+      - name: Check spelling
+        run: codespell .
