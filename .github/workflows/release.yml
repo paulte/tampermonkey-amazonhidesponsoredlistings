@@ -143,12 +143,17 @@ jobs:
 
           file="dist/hide-sponsored-listings.user.js"
 
+          echo "Expected version: ${VERSION}"
+          echo "Generated metadata:"
+          grep -E '^// @(version|downloadURL|updateURL|grant)' "$file" || true
+
           grep -Eq "^// @version[[:space:]]+${VERSION}[[:space:]]*$" "$file"
           grep -Eq "^// @downloadURL[[:space:]]+https://github.com/" "$file"
           grep -Eq "^// @updateURL[[:space:]]+https://github.com/" "$file"
           grep -Eq "^// @grant[[:space:]]+none[[:space:]]*$" "$file"
+
           echo "Release userscript metadata validated."
-          
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
