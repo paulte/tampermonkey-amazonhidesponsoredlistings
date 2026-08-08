@@ -22,3 +22,11 @@ repos:
     rev: v2.4.1
     hooks:
       - id: codespell
+
+  - repo: local
+    hooks:
+      - id: actionlint
+        name: GitHub Actions
+        entry: actionlint
+        language: system
+        files: ^\.github/workflows/.*\.ya?ml$
