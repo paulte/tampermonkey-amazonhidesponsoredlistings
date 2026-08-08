@@ -2,14 +2,8 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
-| Version | Supported |
-| ------- | ------------------ |
-| 1.1 | :white_check_mark: |
-| 1.0 | :white_check_mark: |
-| < 1.0 | :x: |
+Only the latest release will be supported:
+https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/releases/latest
 
 ## Reporting a Vulnerability
 
