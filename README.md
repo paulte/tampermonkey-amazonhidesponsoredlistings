@@ -2,24 +2,33 @@
 [![CodeQL](https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/actions/workflows/codeql.yml/badge.svg)](https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/actions/workflows/codeql.yml)
 [![Dependabot](https://img.shields.io/badge/dependencies-Dependabot-025E8C?logo=dependabot)](https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/network/updates)
 
-Purpose
+# Purpose
 
 Tampermonkey script to remove sponsored listings from amazon searches
 
-## Development and testing
+# Development and testing
 
-This project uses automated testing and GitHub Actions to check both the userscript itself and the Amazon page structure it depends on.
+Testing is present in a number of places
 
-- **CI** runs on pushes to `main` and pull requests. It checks formatting, JavaScript linting, Markdown formatting, spelling, and the local Playwright userscript tests. Note, this won't do live tests against amazon to
-  ensure the search output still contains the same formateted sponsored listigns
+- pre-commit will check formatting, linting, and spelling before allowing a commit to be made
+- CI will run the same precommit tests on any commit via github actions
+- It is expected that a `npm run test` is run before any commit. This validates the userscript against a live amazon search page to ensure that the sponsored listings are still being removed. This test will fail if amazon changes their page structure and the userscript needs to be updated.
+- Note, direct testing against amazon is not part of the CI test suite because it is not reliable. It appears that amazon has anti-automation measures that will block any tests triggered in github actions.
 
-- **Amazon Structure Check** runs separately because it accesses the live Amazon website. It checks that Amazon's current search-result HTML still exposes sponsored listings in a way that the userscript can identify. It
-  runs weekly and can also be triggered manually.
+In the background, github actions will perform the following:
 
-  - **CodeQL** performs automated security analysis of the JavaScript code.
-  - **Dependabot** monitors project dependencies and GitHub Actions for available updates.
+- codeql will perform automated security analysis of the javascript code
+- dependabot will monitor project dependencies and github actions for available updates
 
-  The Amazon Structure Check is intentionally not part of the normal CI test suite. Live website tests can be affected by changes in Amazon's content, availability, or anti-automation measures, so they are treated as an
-  external compatibility check rather than a requirement for every code change.
+# Release process
 
-  A failure of the Amazon Structure Check may indicate that Amazon has changed its search-result structure and that the userscript needs updating.
+`./create-release.sh`
+
+This process will perform a few tasks:
+
+- Validate local git is up-to-date, on main and clean
+- Run `pre-commit` and `npm run test` to ensure that the code is in a good state
+- Create a new git tag as specified by the user
+- Push the tag to github
+
+The act of pushing the tag will trigger a github action to create a new release. This action will validate the userscript metadata and create a new release in github with the userscript attached. A repo webhook will notify greasyfork.org to update the userscript there as well.
