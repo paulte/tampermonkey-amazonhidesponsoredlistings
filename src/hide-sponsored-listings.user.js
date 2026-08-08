@@ -3,6 +3,7 @@
 // @namespace    https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings
 // @homepageURL  https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings
 // @supportURL   https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/issues
+// @released     __RELEASED__
 // @description  Remove sponsored listings from Amazon search results
 // @author       paulte
 // @match        https://www.amazon.co.uk/s*

@@ -61,6 +61,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           REPOSITORY: ${{ github.repository }}
           TAG: ${{ steps.version.outputs.tag }}
+          RELEASED: ${{ github.event.release.published_at || github.event.head_commit.timestamp }}
         run: |
           set -euo pipefail
 
@@ -74,6 +75,7 @@ jobs:
 
           awk \
             -v version="$VERSION" \
+            -v released="$RELEASED" \
             -v download_url="$download_url" \
             -v update_url="$update_url" '
             /^\/\/ ==UserScript==$/ {
@@ -83,6 +85,11 @@ jobs:
 
             /^\/\/ @version[[:space:]]+/ {
               printf "// @version      %s\n", version
+              next
+            }
+
+            /^\/\/ @released[[:space:]]+/ {
+              printf "// @released     %s\n", released
               next
             }
 
@@ -96,6 +103,7 @@ jobs:
 
             /^\/\/ @grant[[:space:]]+/ {
               print "// @version      " version
+              print "// @released     " released
               print "// @downloadURL  " download_url
               print "// @updateURL    " update_url
               print
