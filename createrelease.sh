@@ -46,13 +46,6 @@ if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE" >/dev/null 2>&1;
 	exit 1
 fi
 
-read -r -p "Create and push $RELEASE? [y/N] " CONFIRM
-
-if [[ "$CONFIRM" != "y" ]]; then
-	echo "Cancelled"
-	exit 0
-fi
-
 git tag -a "$RELEASE" -m "Release $RELEASE"
 git push origin "$RELEASE"
 
