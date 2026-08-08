@@ -1,9 +1,8 @@
 // ==UserScript==
 // @name         Hide Sponsored Listings
-// @namespace    https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings.git
-// @version      1.3.0
+// @namespace    https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings
 // @description  Remove sponsored listings from Amazon search results
-// @author       You
+// @author       paulte
 // @match        https://www.amazon.co.uk/s*
 // @grant        none
 // ==/UserScript==
