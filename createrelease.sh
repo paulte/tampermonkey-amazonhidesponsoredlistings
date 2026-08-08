@@ -46,11 +46,6 @@ if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE" >/dev/null 2>&1;
 	exit 1
 fi
 
-echo
-echo "Releasing $RELEASE from:"
-git log -1 --oneline
-echo
-
 read -r -p "Create and push $RELEASE? [y/N] " CONFIRM
 
 if [[ "$CONFIRM" != "y" ]]; then
