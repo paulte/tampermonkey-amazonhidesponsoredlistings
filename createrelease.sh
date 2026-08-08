@@ -26,11 +26,11 @@ fi
 
 echo
 echo "Releasing $RELEASE from:"
-git log -1 --oneline | cat
+git --no-pager log -1 --oneline
 echo
 
 echo "Recent releases:"
-git tag --sort=-version:refname | head -10 | cat
+git tag --sort=-version:refname | head -10
 echo
 
 read -r -p "New Release version (e.g. v1.3.6): " RELEASE
