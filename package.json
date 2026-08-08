@@ -1,0 +1,29 @@
+{
+  "name": "tampermonkey-amazonhidesponsoredlistings",
+  "version": "1.0.0",
+  "description": "Remove sponsored listings from Amazon search results using Tampermonkey.",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint src/hide-sponsored-listings.user.js",
+    "format": "prettier --write src/hide-sponsored-listings.user.js",
+    "format:check": "prettier --check src/hide-sponsored-listings.user.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/issues"
+  },
+  "homepage": "https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.8.1",
+    "prettier": "^3.9.6"
+  }
+}
