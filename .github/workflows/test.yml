@@ -22,7 +22,7 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
-      - name: Check JavaScript formatting
+      - name: Check formatting
         run: npm run format:check
 
       - name: Lint JavaScript
@@ -37,7 +37,12 @@ jobs:
         run: pip install mdformat codespell
 
       - name: Check Markdown formatting
-        run: mdformat --check README.md
+        run: |
+          find . -type f \( -name '*.md' -o -name '*.markdown' \) \
+            -not -path './.git/*' \
+            -not -path './node_modules/*' \
+            -print0 |
+            xargs -0 mdformat --check
 
       - name: Check spelling
         run: codespell .
