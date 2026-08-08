@@ -45,4 +45,4 @@ jobs:
             xargs -0 mdformat --check
 
       - name: Check spelling
-        run: codespell .
+        run: codespell --skip='node_modules/*,.git/*,package-lock.json' .
