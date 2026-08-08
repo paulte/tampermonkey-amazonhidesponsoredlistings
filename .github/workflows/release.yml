@@ -1,0 +1,162 @@
+---
+name: Release
+
+"on":
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout tagged source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate release tag
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${GITHUB_REF_NAME}"
+
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid release tag: $tag"
+            echo "Expected format: vMAJOR.MINOR.PATCH"
+            exit 1
+          fi
+
+          version="${tag#v}"
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          echo "Release tag: $tag"
+          echo "Release version: $version"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Lint GitHub Actions
+        uses: raven-actions/actionlint@v2
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint JavaScript
+        run: npm run lint
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Install Markdown tools
+        run: pip install mdformat codespell
+
+      - name: Check Markdown formatting
+        run: |
+          find . -type f \( -name '*.md' -o -name '*.markdown' \) \
+            -not -path './.git/*' \
+            -not -path './node_modules/*' \
+            -print0 |
+            xargs -0 mdformat --check
+
+      - name: Check spelling
+        run: git ls-files -z | xargs -0 codespell
+
+      - name: Build release userscript
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          REPOSITORY: ${{ github.repository }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p dist
+
+          input="src/hide-sponsored-listings.user.js"
+          output="dist/hide-sponsored-listings.user.js"
+
+          download_url="https://github.com/${REPOSITORY}/releases/download/${TAG}/hide-sponsored-listings.user.js"
+          update_url="https://github.com/${REPOSITORY}/releases/latest/download/hide-sponsored-listings.user.js"
+
+          awk \
+            -v version="$VERSION" \
+            -v download_url="$download_url" \
+            -v update_url="$update_url" '
+            /^\/\/ ==UserScript==$/ {
+              print
+              next
+            }
+
+            /^\/\/ @version[[:space:]]+/ {
+              printf "// @version      %s\n", version
+              next
+            }
+
+            /^\/\/ @downloadURL[[:space:]]+/ {
+              next
+            }
+
+            /^\/\/ @updateURL[[:space:]]+/ {
+              next
+            }
+
+            /^\/\/ @grant[[:space:]]+/ {
+              print "// @downloadURL  " download_url
+              print "// @updateURL    " update_url
+              print
+              print
+              next
+            }
+
+            {
+              print
+            }
+          ' "$input" > "$output"
+
+          echo "Generated release userscript:"
+          cat "$output"
+
+      - name: Validate generated userscript
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          file="dist/hide-sponsored-listings.user.js"
+
+          grep -q "^// @version[[:space:]]\+${VERSION}$" "$file"
+          grep -q "^// @downloadURL[[:space:]]\+https://github.com/" "$file"
+          grep -q "^// @updateURL[[:space:]]\+https://github.com/" "$file"
+          grep -q "^// @grant[[:space:]]\+none$" "$file"
+
+          echo "Release userscript metadata validated."
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "$TAG" \
+            dist/hide-sponsored-listings.user.js \
+            --title "v${VERSION}" \
+            --generate-notes
