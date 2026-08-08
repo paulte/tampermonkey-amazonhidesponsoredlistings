@@ -119,6 +119,7 @@ jobs:
             }
 
             /^\/\/ @grant[[:space:]]+/ {
+              print "// @version      " version
               print "// @downloadURL  " download_url
               print "// @updateURL    " update_url
               print
