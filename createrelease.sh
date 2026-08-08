@@ -24,10 +24,6 @@ if [[ -n "$(git status --porcelain)" ]]; then
 	exit 1
 fi
 
-echo
-echo "Releasing $RELEASE from:"
-git --no-pager log -1 --oneline
-echo
 
 echo "Recent releases:"
 git tag --sort=-version:refname | head -10
