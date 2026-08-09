@@ -136,7 +136,7 @@ jobs:
           test "$(grep -Ec '^// @downloadURL[[:space:]]+' "$file")" -eq 1
           test "$(grep -Ec '^// @updateURL[[:space:]]+' "$file")" -eq 1
           test "$(grep -Ec '^// @grant[[:space:]]+' "$file")" -eq 1
-                    
+
           echo "Release userscript metadata validated."
 
       - name: Create GitHub Release
