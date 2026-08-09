@@ -22,7 +22,13 @@ In the background, github actions will perform the following:
 
 # Release process
 
-`./create-release.sh`
+Run one of the following depending on whether you want to bump he major, minor or patch version
+
+```bash
+./create-release.sh  ( --major | --minor | --patch )
+```
+
+By default, run `./create-release.sh --patch` should be used
 
 This process will perform a few tasks:
 
