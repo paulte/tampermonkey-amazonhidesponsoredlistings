@@ -36,7 +36,9 @@ This process will perform a few tasks:
 
 - Validate local git is up-to-date, on main and clean
 - Run `pre-commit` and `npm run test` to ensure that the code is in a good state
-- Create a new git tag as specified by the user
+- Create a new `dest/hide-sponsored-listings.user.js` with updated version and release date
+- Create a new git tag
+- Create a new release for the tag
 - Push the tag to github
 
-The act of pushing the tag will trigger a github action to create a new release. This action will validate the userscript metadata and create a new release in github with the userscript attached. A repo webhook will notify greasyfork.org to update the userscript there as well.
+A repo webhook will notify greasyfork.org to update the userscript there as well.
