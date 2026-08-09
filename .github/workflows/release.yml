@@ -115,6 +115,7 @@ jobs:
               print
             }
           ' "$input" > "$output"
+
           echo "Generated release userscript:"
           cat "$output"
 
@@ -139,6 +140,27 @@ jobs:
 
           echo "Release userscript metadata validated."
 
+      - name: Commit generated distribution file
+        shell: bash
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -f dist/hide-sponsored-listings.user.js
+
+          git commit \
+            -m "Build ${TAG}" \
+            dist/hide-sponsored-listings.user.js
+
+          git tag -f "$TAG"
+
+          git push origin "refs/tags/${TAG}" --force
+
+          echo "Updated ${TAG} to include generated dist file."
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -149,4 +171,5 @@ jobs:
             dist/hide-sponsored-listings.user.js \
             --title "v${VERSION}" \
             --generate-notes
+
           echo "Github Release created: $TAG"
