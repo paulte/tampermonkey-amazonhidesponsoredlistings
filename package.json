@@ -4,7 +4,7 @@
   "description": "Remove sponsored listings from Amazon search results using Tampermonkey.",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint src/hide-sponsored-listings.user.js",
+    "lint": "eslint src",
     "format": "prettier --write \"**/*.{js,json}\"",
     "format:check": "prettier --check \"**/*.{js,json}\"",
     "test": "playwright test"
@@ -15,7 +15,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "module",
   "bugs": {
     "url": "https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/issues"
