@@ -142,16 +142,16 @@ createdistversion() {
     next
     }
     { print }
-    ' >dist/hide-sponsored-listings.user.js
+    ' >hide-sponsored-listings.user.js
 }
 
 createtagandpush() {
-	git add dist/hide-sponsored-listings.user.js
+	git add hide-sponsored-listings.user.js
 	git commit -m "Adding ${RELEASE} version of dist/hide-sponsored-listings.user.js"
 	git push origin main
 	git tag -a "$RELEASE" -m "Release $RELEASE"
 	git push origin "$RELEASE" || echo "Tag already exists remotely"
-	gh release create "$RELEASE" dist/hide-sponsored-listings.user.js --title "$RELEASE" --notes "Release $RELEASE"
+	gh release create "$RELEASE" hide-sponsored-listings.user.js --title "$RELEASE" --notes "Release $RELEASE"
 	echo "Released $RELEASE"
 }
 
