@@ -65,7 +65,7 @@ performtests() {
 		exit 1
 	fi
 
-	pre-commit run --all-files
+	pre-commit run --all-files --show-diff-on-failure
 	npm test
 }
 
