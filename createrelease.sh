@@ -133,7 +133,7 @@ evaluatenextversion() {
 createdistversion() {
 	DSTAMP=$(date "+%Y-%m-%dT%H:%M:%S%z")
 	RELEASENUMBER="${RELEASE#v}"
-		grep -Ev '^\/\/.*@(version|released)' src/hide-sponsored-listings.user.js |
+	grep -Ev '^\/\/.*@(version|released)' src/hide-sponsored-listings.user.js |
 		awk -v release="$RELEASENUMBER" -v dstamp="$DSTAMP" '
     /\/\/ @name[[:space:]]/ {
     print
@@ -146,12 +146,13 @@ createdistversion() {
 }
 
 createtagandpush() {
+	git add dist/hide-sponsored-listings.user.js
+	git commit -m "Adding ${RELEASE} version of dist/hide-sponsored-listings.user.js"
+	git push origin main
 	git tag -a "$RELEASE" -m "Release $RELEASE"
-    git push origin main
 	git push origin "$RELEASE" || echo "Tag already exists remotely"
 	gh release create "$RELEASE" dist/hide-sponsored-listings.user.js --title "$RELEASE" --notes "Release $RELEASE"
 	echo "Released $RELEASE"
-	rm "dist/hide-sponsored-listings.user.js"
 }
 
 checkargs "$@"
