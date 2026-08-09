@@ -147,7 +147,7 @@ createdistversion() {
 
 createtagandpush() {
 	git add hide-sponsored-listings.user.js
-	git commit -m "Adding ${RELEASE} version of dist/hide-sponsored-listings.user.js"
+	git commit -m "Adding ${RELEASE} version of hide-sponsored-listings.user.js for greasyfork.org integration"
 	git push origin main
 	git tag -a "$RELEASE" -m "Release $RELEASE"
 	git push origin "$RELEASE" || echo "Tag already exists remotely"
