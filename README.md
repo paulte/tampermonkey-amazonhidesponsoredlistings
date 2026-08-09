@@ -2,7 +2,6 @@
 [![CodeQL](https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/actions/workflows/codeql.yml/badge.svg)](https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/actions/workflows/codeql.yml)
 [![Dependabot](https://img.shields.io/badge/dependencies-Dependabot-025E8C?logo=dependabot)](https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/network/updates)
 [![Release](https://img.shields.io/github/v/release/paulte/tampermonkey-amazonhidesponsoredlistings)](https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/releases)
-[![Release Workflow](https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/actions/workflows/release.yml/badge.svg)](https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/actions/workflows/release.yml)
 
 # Purpose
 
@@ -36,9 +35,8 @@ This process will perform a few tasks:
 
 - Validate local git is up-to-date, on main and clean
 - Run `pre-commit` and `npm run test` to ensure that the code is in a good state
-- Create a new `dest/hide-sponsored-listings.user.js` with updated version and release date
+- Create a new `hide-sponsored-listings.user.js` with updated version and release date
 - Create a new git tag
 - Create a new release for the tag
 - Push the tag to github
-
-A repo webhook will notify greasyfork.org to update the userscript there as well.
+- Release webhooks in github will notify greasyfork.org to update the userscript there as well. Note, the published artefact must be in the root of the repository for greasyfork to find it. This is why the `hide-sponsored-listings.user.js` is in the root of the repo and not in a `dist` folder.
