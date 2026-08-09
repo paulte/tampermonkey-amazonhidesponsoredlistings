@@ -1,0 +1,33 @@
+name: Create Release Tag
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: Release type
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+permissions:
+  contents: write
+jobs:
+  create-tag:
+    name: Create ${{ inputs.release_type }} release tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Create release tag
+        run: |
+          set -euo pipefail
+          ./scripts/createrelease.sh "${{ inputs.release_type }}"
