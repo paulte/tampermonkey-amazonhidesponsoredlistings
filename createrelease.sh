@@ -147,7 +147,8 @@ createdistversion() {
 
 createtagandpush() {
 	git tag -a "$RELEASE" -m "Release $RELEASE"
-	git push origin "$RELEASE"
+    git push origin main
+	git push origin "$RELEASE" || echo "Tag already exists remotely"
 	gh release create "$RELEASE" dist/hide-sponsored-listings.user.js --title "$RELEASE" --notes "Release $RELEASE"
 	echo "Released $RELEASE"
 	rm "dist/hide-sponsored-listings.user.js"
