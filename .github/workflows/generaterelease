@@ -1,0 +1,14 @@
+---
+name: Create release tag
+
+"on":
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: Release type
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
