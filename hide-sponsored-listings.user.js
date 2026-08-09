@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         Hide Sponsored Listings in Amazon Search
-// @version      1.3.17
-// @released     2026-08-09T10:55:32+0100
+// @version      1.3.18
+// @released     2026-08-09T17:10:45+0100
 // @namespace    https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings
 // @supportURL   https://github.com/paulte/tampermonkey-amazonhidesponsoredlistings/issues
 // @description  Remove sponsored listings from Amazon search results
 // @author       paulte
 // @match        https://www.amazon.co.uk/s*
+// @license      MIT
 // @grant        none
 // ==/UserScript==
 
