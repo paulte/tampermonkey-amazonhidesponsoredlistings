@@ -133,8 +133,7 @@ evaluatenextversion() {
 createdistversion() {
 	DSTAMP=$(date "+%Y-%m-%dT%H:%M:%S%z")
 	RELEASENUMBER="${RELEASE#v}"
-	head -20 src/hide-sponsored-listings.user.js |
-		grep -Ev '^\/\/.*@(version|released)' |
+		grep -Ev '^\/\/.*@(version|released)' src/hide-sponsored-listings.user.js |
 		awk -v release="$RELEASENUMBER" -v dstamp="$DSTAMP" '
     /\/\/ @name[[:space:]]/ {
     print
