@@ -30,4 +30,4 @@ jobs:
       - name: Create release tag
         run: |
           set -euo pipefail
-          ./scripts/createrelease.sh "${{ inputs.release_type }}"
+          ./createrelease.sh "${{ inputs.release_type }}"
