@@ -28,7 +28,7 @@ Run one of the following depending on whether you want to bump he major, minor o
 ./create-release.sh  ( --major | --minor | --patch )
 ```
 
-By default, run `./create-release.sh --patch` should be used
+By default, `./create-release.sh --patch` should be used
 
 This process will perform a few tasks:
 
