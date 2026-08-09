@@ -6,6 +6,7 @@
 // @description  Remove sponsored listings from Amazon search results
 // @author       paulte
 // @match        https://www.amazon.co.uk/s*
+// @license      MIT
 // @grant        none
 // ==/UserScript==
 
