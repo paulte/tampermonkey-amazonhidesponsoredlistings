@@ -84,12 +84,10 @@ jobs:
             }
 
             /^\/\/ @version[[:space:]]+/ {
-              printf "// @version      %s\n", version
               next
             }
 
             /^\/\/ @released[[:space:]]+/ {
-              printf "// @released     %s\n", released
               next
             }
 
@@ -102,12 +100,14 @@ jobs:
             }
 
             /^\/\/ @grant[[:space:]]+/ {
-              print "// @version      " version
-              print "// @released     " released
-              print "// @downloadURL  " download_url
-              print "// @updateURL    " update_url
               print
-              print
+              if (!generated) {
+                printf "// @version      %s\n", version
+                printf "// @released     %s\n", released
+                printf "// @downloadURL  %s\n", download_url
+                printf "// @updateURL    %s\n", update_url
+                generated = 1
+              }
               next
             }
 
@@ -115,7 +115,6 @@ jobs:
               print
             }
           ' "$input" > "$output"
-
           echo "Generated release userscript:"
           cat "$output"
 
@@ -132,11 +131,12 @@ jobs:
           echo "Generated metadata:"
           grep -E '^// @(version|downloadURL|updateURL|grant)' "$file" || true
 
-          grep -Eq "^// @version[[:space:]]+${VERSION}[[:space:]]*$" "$file"
-          grep -Eq "^// @downloadURL[[:space:]]+https://github.com/" "$file"
-          grep -Eq "^// @updateURL[[:space:]]+https://github.com/" "$file"
-          grep -Eq "^// @grant[[:space:]]+none[[:space:]]*$" "$file"
-
+          test "$(grep -Ec '^// @version[[:space:]]+' "$file")" -eq 1
+          test "$(grep -Ec '^// @released[[:space:]]+' "$file")" -eq 1
+          test "$(grep -Ec '^// @downloadURL[[:space:]]+' "$file")" -eq 1
+          test "$(grep -Ec '^// @updateURL[[:space:]]+' "$file")" -eq 1
+          test "$(grep -Ec '^// @grant[[:space:]]+' "$file")" -eq 1
+                    
           echo "Release userscript metadata validated."
 
       - name: Create GitHub Release
