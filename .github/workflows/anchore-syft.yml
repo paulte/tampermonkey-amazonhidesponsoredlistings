@@ -16,10 +16,10 @@ jobs:
 
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Scan the repository and upload dependency results
-        uses: anchore/sbom-action@bb716408e75840bbb01e839347cd213767269d4a
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
         with:
           path: .
           artifact-name: sbom.spdx.json
